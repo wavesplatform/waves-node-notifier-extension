@@ -10,24 +10,24 @@ import com.wavesplatform.transaction.Asset.Waves
 import com.wavesplatform.transaction.lease.{LeaseCancelTransaction, LeaseTransaction}
 import com.wavesplatform.transaction.transfer.{MassTransferTransaction, TransferTransaction}
 import com.wavesplatform.utils.ScorexLogging
-import net.ceedubs.ficus.Ficus._
 import im.mak.notifier.settings.MinerNotifierSettings
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
+import net.ceedubs.ficus.Ficus._
 import scalaj.http.Http
 
 import scala.concurrent.Future
 
 class MinerNotifierExtension(context: ExtensionContext) extends Extension with ScorexLogging {
 
-  private[this] val settings = context.settings.config.as[MinerNotifierSettings]("mining-notifier")
   val minerPublicKey: PublicKey = context.wallet.privateKeyAccounts.head.publicKey
-
+  private[this] val settings = context.settings.config.as[MinerNotifierSettings]("mining-notifier")
   var lastKnownHeight = 0
 
   def mrt(tokens: Long): String = new DecimalFormat("###,###.##")
     .format((BigDecimal(tokens) / 100).doubleValue())
+
   def waves(wavelets: Long): String = new DecimalFormat("###,###.########")
     .format((BigDecimal(wavelets) / 100000000).doubleValue())
 
@@ -98,13 +98,11 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
 
       if (settings.notifications.wavesReceived) {
         val wavesReceived = block.transactionData.map {
-          case mt: MassTransferTransaction => mt.transfers.map(t =>
-            mt.assetId match {
-              case Waves => if (t.address isMiner) t.amount else 0
-            }).sum
-          case t: TransferTransaction => t.assetId match {
-            case Waves => if (t.recipient isMiner) t.amount else 0
-          }
+          case mt: MassTransferTransaction if mt.assetId == Waves => mt.transfers.collect {
+            case t if t.address.isMiner => t.amount
+          }.sum
+          case t: TransferTransaction if t.assetId == Waves && t.recipient.isMiner => t.amount
+          case _ => 0
         }.sum
         info(s"Received ${waves(wavesReceived)} Waves at ${blockUrl(lastKnownHeight)}")
       }
