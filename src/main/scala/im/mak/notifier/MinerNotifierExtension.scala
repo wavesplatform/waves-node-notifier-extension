@@ -2,9 +2,10 @@ package im.mak.notifier
 
 import java.text.DecimalFormat
 
-import com.wavesplatform.account.{Address, PublicKey}
+import com.wavesplatform.account.{Address, AddressOrAlias, PublicKey}
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.extensions.{Extension, Context => ExtensionContext}
+import com.wavesplatform.transaction.Asset
 import com.wavesplatform.transaction.Asset.Waves
 import com.wavesplatform.transaction.lease.{LeaseCancelTransaction, LeaseTransaction}
 import com.wavesplatform.transaction.transfer.{MassTransferTransaction, TransferTransaction}
@@ -61,6 +62,15 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
     sendNotification(message)
   }
 
+  implicit class IsMiner(a: AddressOrAlias) {
+    def isMiner: Boolean =
+      context.blockchain.resolveAlias(a).right.get.stringRepr == minerPublicKey.toAddress.stringRepr
+  }
+
+  implicit class AssetId(a: Asset) {
+    def isMrt: Boolean = a.maybeBase58Repr.get == settings.mrtId
+  }
+
   def checkNextBlock(): Unit = {
     val height = context.blockchain.height
     if (height == lastKnownHeight + 1) { // otherwise, most likely, the node is not yet synchronized
@@ -69,14 +79,14 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
       if (settings.notifications.leasing) {
         val leased = block.transactionData.map {
           case l: LeaseTransaction =>
-            if (l.recipient.asInstanceOf[Address].stringRepr == minerPublicKey.address)
+            if (l.recipient isMiner)
               l.amount
             else 0
         }.sum
         val leaseCanceled = block.transactionData.map {
           case l: LeaseCancelTransaction =>
             val lease = context.blockchain.leaseDetails(l.leaseId).get
-            if (lease.recipient.asInstanceOf[Address].stringRepr == minerPublicKey.address)
+            if (lease.recipient isMiner)
               lease.amount
             else 0
         }.sum
@@ -90,12 +100,10 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
         val wavesReceived = block.transactionData.map {
           case mt: MassTransferTransaction => mt.transfers.map(t =>
             mt.assetId match {
-              case Waves => if (t.address.asInstanceOf[Address].stringRepr == minerPublicKey.address)
-                t.amount else 0
+              case Waves => if (t.address isMiner) t.amount else 0
             }).sum
           case t: TransferTransaction => t.assetId match {
-            case Waves => if (t.recipient.asInstanceOf[Address].stringRepr == minerPublicKey.address)
-              t.amount else 0
+            case Waves => if (t.recipient isMiner) t.amount else 0
           }
         }.sum
         info(s"Received ${waves(wavesReceived)} Waves at ${blockUrl(lastKnownHeight)}")
@@ -104,14 +112,10 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
       if (settings.notifications.mrtReceived) {
         val mrtReceived = block.transactionData.map {
           case mt: MassTransferTransaction => mt.transfers.map(t =>
-            if (mt.assetId.maybeBase58Repr.get == settings.mrtId
-              && t.address.asInstanceOf[Address].stringRepr == minerPublicKey.address)
-              t.amount else 0
+            if (t.address.isMiner && mt.assetId.isMrt) t.amount else 0
           ).sum
           case t: TransferTransaction =>
-            if (t.assetId.maybeBase58Repr.get == settings.mrtId
-              && t.recipient.asInstanceOf[Address].stringRepr == minerPublicKey.address)
-              t.amount else 0
+            if (t.recipient.isMiner && t.assetId.isMrt) t.amount else 0
         }.sum
         info(s"Received ${mrt(mrtReceived)} MRT at ${blockUrl(lastKnownHeight)}")
       }
@@ -135,7 +139,7 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
     val generatingBalance = context.blockchain.generatingBalance(minerPublicKey.toAddress)
 
     if (settings.notifications.startStop) {
-      info(s"Started at $lastKnownHeight height for miner ${minerPublicKey.address}. " +
+      info(s"Started at $lastKnownHeight height for miner ${minerPublicKey.toAddress.stringRepr}. " +
         s"Generating balance: ${waves(generatingBalance)} Waves")
     }
 
@@ -144,13 +148,13 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
         warn(s"Node doesn't mine blocks!" +
           s" Generating balance is ${waves(generatingBalance)} Waves but must be at least 1000 Waves")
       if (context.blockchain.hasScript(minerPublicKey.toAddress))
-        warn(s"Node doesn't mine blocks! Account ${minerPublicKey.address} is scripted." +
+        warn(s"Node doesn't mine blocks! Account ${minerPublicKey.toAddress.stringRepr} is scripted." +
           s" Send SetScript transaction with null script or use another account for mining")
       if (settings.notifications.mrtReceived
         && context.blockchain.transactionInfo(ByteStr.decodeBase58(settings.mrtId).getOrElse(ByteStr.empty)).isDefined)
         warn(s"""Can't parse "${settings.mrtId}" MRT Id! These notifications will not be sent""")
 
-      Observable.interval(4 seconds) // blocks are mined no more than once every 5 seconds
+      Observable.interval(1 seconds) // blocks are mined no more than once every 5 seconds
         .doOnNext(_ => Task.now(checkNextBlock()))
         .subscribe
     } else {
@@ -160,7 +164,7 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
   }
 
   override def shutdown(): Future[Unit] = Future {
-    info(s"Turned off at $lastKnownHeight height for miner ${minerPublicKey.address}")
+    info(s"Turned off at $lastKnownHeight height for miner ${minerPublicKey.toAddress.stringRepr}")
   }
 
 }

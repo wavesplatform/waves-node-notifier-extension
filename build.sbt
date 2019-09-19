@@ -2,7 +2,7 @@ name := "mining-notifier"
 version := "0.1"
 
 scalaVersion := "2.12.8"
-val nodeVersion = "v1.0.2"
+val nodeVersion = "v1.1.2"
 
 lazy val node = ProjectRef( uri(s"git://github.com/wavesplatform/Waves.git#$nodeVersion"), "node")
 
