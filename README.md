@@ -11,9 +11,9 @@
 - notifies about changes of leased volume.
 
 ## How to install:
-1. download `mining-notifier-0.3.jar` to `/usr/share/waves/lib/`:
+1. download `mining-notifier-0.3.1.jar` to `/usr/share/waves/lib/`:
 ```
-wget https://github.com/msmolyakov/waves-node-notifier-extension/releases/download/v0.3/mining-notifier-0.3.jar -P /usr/share/waves/lib/
+wget https://github.com/msmolyakov/waves-node-notifier-extension/releases/download/v0.3.1/mining-notifier-0.3.1.jar -P /usr/share/waves/lib/
 ```
 2. download official `scalaj-http_2.12-2.4.2.jar` from Maven Central to `/usr/share/waves/lib/`:
 ```
