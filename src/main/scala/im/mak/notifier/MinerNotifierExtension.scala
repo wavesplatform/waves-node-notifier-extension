@@ -2,7 +2,7 @@ package im.mak.notifier
 
 import java.text.DecimalFormat
 
-import com.wavesplatform.account.{Address, AddressOrAlias, PublicKey}
+import com.wavesplatform.account.{AddressOrAlias, PublicKey}
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.extensions.{Extension, Context => ExtensionContext}
 import com.wavesplatform.transaction.Asset
