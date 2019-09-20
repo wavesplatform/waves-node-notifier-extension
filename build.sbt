@@ -1,5 +1,5 @@
 name := "mining-notifier"
-version := "0.3.2"
+version := "0.3.3"
 
 scalaVersion := "2.12.9"
 val nodeVersion = "v1.1.2"
