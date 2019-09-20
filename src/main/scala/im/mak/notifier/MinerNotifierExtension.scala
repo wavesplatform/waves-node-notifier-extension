@@ -77,13 +77,13 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
       val block = context.blockchain.blockAt(lastKnownHeight).get
 
       if (settings.notifications.leasing) {
-        val leased = block.transactionData.map {
+        val leased = block.transactionData.collect {
           case l: LeaseTransaction =>
             if (l.recipient isMiner)
               l.amount
             else 0
         }.sum
-        val leaseCanceled = block.transactionData.map {
+        val leaseCanceled = block.transactionData.collect {
           case l: LeaseCancelTransaction =>
             val lease = context.blockchain.leaseDetails(l.leaseId).get
             if (lease.recipient isMiner)
@@ -97,18 +97,17 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
       }
 
       if (settings.notifications.wavesReceived) {
-        val wavesReceived = block.transactionData.map {
+        val wavesReceived = block.transactionData.collect {
           case mt: MassTransferTransaction if mt.assetId == Waves => mt.transfers.collect {
             case t if t.address.isMiner => t.amount
           }.sum
           case t: TransferTransaction if t.assetId == Waves && t.recipient.isMiner => t.amount
-          case _ => 0
         }.sum
         info(s"Received ${waves(wavesReceived)} Waves at ${blockUrl(lastKnownHeight)}")
       }
 
       if (settings.notifications.mrtReceived) {
-        val mrtReceived = block.transactionData.map {
+        val mrtReceived = block.transactionData.collect {
           case mt: MassTransferTransaction => mt.transfers.map(t =>
             if (t.address.isMiner && mt.assetId.isMrt) t.amount else 0
           ).sum
