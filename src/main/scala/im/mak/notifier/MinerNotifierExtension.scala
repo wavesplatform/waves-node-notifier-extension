@@ -6,7 +6,7 @@ import com.wavesplatform.account.{AddressOrAlias, PublicKey}
 import com.wavesplatform.common.state.ByteStr
 import com.wavesplatform.extensions.{Extension, Context => ExtensionContext}
 import com.wavesplatform.transaction.Asset
-import com.wavesplatform.transaction.Asset.Waves
+import com.wavesplatform.transaction.Asset.{IssuedAsset, Waves}
 import com.wavesplatform.transaction.lease.{LeaseCancelTransaction, LeaseTransaction}
 import com.wavesplatform.transaction.transfer.{MassTransferTransaction, TransferTransaction}
 import com.wavesplatform.utils.ScorexLogging
@@ -148,9 +148,13 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
       if (context.blockchain.hasScript(minerPublicKey.toAddress))
         warn(s"Node doesn't mine blocks! Account ${minerPublicKey.toAddress.stringRepr} is scripted." +
           s" Send SetScript transaction with null script or use another account for mining")
-      if (settings.notifications.mrtReceived
-        && context.blockchain.transactionInfo(ByteStr.decodeBase58(settings.mrtId).getOrElse(ByteStr.empty)).isDefined)
-        warn(s"""Can't parse "${settings.mrtId}" MRT Id! These notifications will not be sent""")
+      if (settings.notifications.mrtReceived) {
+        val id = ByteStr.decodeBase58(settings.mrtId).getOrElse(ByteStr.empty)
+        if (id.isEmpty)
+          warn(s"""Can't parse "${settings.mrtId}" MRT Id! These notifications will not be sent""")
+        else if (context.blockchain.transactionInfo(id).isEmpty)
+          warn(s"""Can't find transaction "${settings.mrtId}"! MRT notifications will not be sent""")
+      }
 
       Observable.interval(1 seconds) // blocks are mined no more than once every 5 seconds
         .doOnNext(_ => Task.now(checkNextBlock()))

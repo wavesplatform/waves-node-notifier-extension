@@ -25,8 +25,8 @@ waves.extensions = [
   "im.mak.notifier.MinerNotifierExtension"
 ]
 mining-notifier.webhook {
-  url = "https://example.com/webhook/1234567890" # DON'T FORGET TO SPECIFY YOUR ENDPOINT
-  body = """Mainnet: %s"""
+  # url = "https://example.com/webhook/1234567890" # SPECIFY YOUR ENDPOINT
+  # body = """Mainnet: %s"""
 }
 ```
 For example, for notifications you can use Telegram bot https://t.me/bullhorn_bot from https://integram.org/ team.
