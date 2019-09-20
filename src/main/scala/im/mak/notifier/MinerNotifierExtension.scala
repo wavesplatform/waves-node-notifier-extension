@@ -103,7 +103,8 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
           }.sum
           case t: TransferTransaction if t.assetId == Waves && t.recipient.isMiner => t.amount
         }.sum
-        info(s"Received ${waves(wavesReceived)} Waves at ${blockUrl(lastKnownHeight)}")
+        if (wavesReceived > 0)
+          info(s"Received ${waves(wavesReceived)} Waves at ${blockUrl(lastKnownHeight)}")
       }
 
       if (settings.notifications.mrtReceived) {
@@ -114,7 +115,8 @@ class MinerNotifierExtension(context: ExtensionContext) extends Extension with S
           case t: TransferTransaction =>
             if (t.recipient.isMiner && t.assetId.isMrt) t.amount else 0
         }.sum
-        info(s"Received ${mrt(mrtReceived)} MRT at ${blockUrl(lastKnownHeight)}")
+        if (mrtReceived > 0)
+          info(s"Received ${mrt(mrtReceived)} MRT at ${blockUrl(lastKnownHeight)}")
       }
 
       if (minerPublicKey == block.getHeader().signerData.generator) {
