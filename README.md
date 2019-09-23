@@ -2,7 +2,7 @@
 
 ## What can do
 
-- when the node starts, it sends message:
+- when the node starts, it sends message why the node will not generate blocks:
   - if mining disabled in config
   - a generating balance is less than 1000 Waves
   - the miner account has a smart contract
@@ -29,4 +29,14 @@ mining-notifier.webhook {
   # body = """Mainnet: %s"""
 }
 ```
-For example, for notifications you can use Telegram bot https://t.me/bullhorn_bot from https://integram.org/ team.
+4. restart the node
+
+If 
+
+## Notifications
+
+You can specify any endpoint of notifications.
+
+For example, you can use Telegram bot https://t.me/bullhorn_bot from https://integram.org/ team (add this bot and read its welcome message).
+
+You can read the full list of properties in the [src/main/resources/application.conf](application.conf).
