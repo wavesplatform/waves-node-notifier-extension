@@ -31,11 +31,11 @@ mining-notifier.webhook {
 ```
 4. restart the node
 
-If 
+If node starts successfully, you will receive message about this.
 
 ## Notifications
 
-You can specify any endpoint of notifications.
+By default the extension writes notifications to the node log file. In addition, you can specify any endpoint of notifications.
 
 For example, you can use Telegram bot https://t.me/bullhorn_bot from https://integram.org/ team (add this bot and read its welcome message).
 
