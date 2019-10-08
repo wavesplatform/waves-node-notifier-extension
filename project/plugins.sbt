@@ -1,5 +1,5 @@
-val plugins = Seq(
+lazy val projPlugins = Seq(
   "org.scalameta" % "sbt-scalafmt" % "2.0.1"
 )
 
-plugins.map(addSbtPlugin)
+projPlugins.map(addSbtPlugin)
